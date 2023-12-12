@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Christmas Scene with Tree Lights</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">
+  <style>
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    canvas {
+      border: 1px solid black;
+    }
+  </style>
+</head>
+
+<body>
+  <script>
+    let textX;
+    let animationStartTime;
+
+    function setup() {
+      // Set to 1425, 800 for full screen
+      createCanvas(800, 600);
+      textSize(32); // Larger text size for emphasis
+      textX = -400; // Start from the left edge of the canvas
+      animationStartTime = millis();
+    }
+
+    function draw() {
+      background(135, 206, 235); // Light blue background for sky
+
+      // Snow on the ground
+      stroke(0); // Black color for the border
+      strokeWeight(1); // Set the stroke weight for visibility
+      fill(255); // White color for snow
+      rect(0, height - height * 0.20, width, height * 0.20) // Draw the snow on the bottom quarter of the screen
+      
+      noStroke(); // Reset Stroke for other elements
+
+      // Snow
+      fill(255);
+      noStroke();
+      for (let i = 0; i < width; i += 7) {
+        let snowY = noise(i * 10, frameCount * 0.01) * height;
+        ellipse(i, snowY, 7, 7);
+      }
+
+      // Tree
+      fill(34, 139, 34); // Dark green color
+      triangle(400, 200, 350, 350, 450, 350);
+      triangle(400, 250, 325, 400, 475, 400);
+      triangle(400, 300, 300, 450, 500, 450);
+
+      // Trunk
+      fill(139, 69, 19); // Brown color
+      rect(390, 450, 20, 50);
+
+      
+      // Draw gold tinsel strand on the tree
+      stroke(255, 215, 0); // Gold color for tinsel
+      strokeWeight(3); // Adjust the thickness of the tinsel
+      
+      // Draw a diagonal tinsel strand from bottom right to mid-top left
+      line(500, 450, 350, 350);
+      line(432, 300, 350, 350);
+      line(384, 250, 433, 300);
+      
+      noStroke(); // Reset stroke for other elements
+
+      // Tree Lights
+      drawTreeLights();
+      
+      // Draw Gifts
+      drawGift(390, 540, 50, 40, color(0, 0, 255)); // Blue gift
+      drawGift(230, 520, 50, 40, color(0, 0, 255)); // Blue gift
+      drawGift(350, 550, 30, 30, color(255, 99, 71)); // Light Red gift
+      drawGift(280, 460, 35, 35, color(0, 128, 0)); // Green gift
+      drawGift(285, 555, 35, 35, color(0, 128, 0)); // Green gift
+      drawGift(410, 490, 35, 35, color(0, 128, 0)); // Green gift
+      drawGift(445, 560, 35, 35, color(0, 128, 0)); // Green gift
+      drawGift(510, 470, 35, 35, color(0, 128, 0)); // Green gift
+      drawGift(530, 510, 40, 30, color(0, 128, 0)); // Green gift
+      drawGift(330, 455, 50, 40, color(255, 0, 0)); // Red gift
+      drawGift(450, 520, 45, 35, color(255, 0, 0)); // Red gift
+      drawGift(450, 452, 40, 60, color(255, 0, 0)); // Red gift
+      drawGift(300, 500, 50, 40, color(255, 0, 0)); // Red gift
+      drawGift(515, 545, 50, 40, color(255, 0, 0)); // Red gift
+
+      // Snowman
+      stroke(0); // Black color for the border
+      strokeWeight(2); // Set the stroke weight for visibility
+      fill(255); // White color for snowman
+      ellipse(200, 450, 100, 100); // Bottom circle
+      ellipse(200, 380, 75, 75); // Middle circle
+      ellipse(200, 320, 50, 50); // Top circle
+
+      // Reset stroke settings for other elements if necessary
+      noStroke(); // Remove the stroke for subsequent elements
+
+      // Top Hat
+      fill(0); // Black color for the hat
+      rect(180, 260, 40, 30); // Top part of the hat
+      rect(165, 290, 70, 10); // Bottom brim of the hat
+
+      // Arms
+      stroke(139, 69, 19); // Brown color for the arms (branch-like)
+      strokeWeight(4); // Making the arms a bit thicker
+      line(150, 380, 100, 350); // Left arm
+      line(250, 380, 300, 350); // Right arm
+
+      // Resetting stroke color and weight
+      stroke(0); // Reset to default black stroke for other elements
+      strokeWeight(1); // Reset to default stroke weight
+
+      // Decorations
+      fill(255, 0, 0); // Red color
+      ellipse(200, 320, 10, 10); // Red nose
+      fill(0); // Black color for eyes and buttons
+      ellipse(190, 310, 5, 5); // Left eye
+      ellipse(210, 310, 5, 5); // Right eye
+      ellipse(200, 360, 5, 5); // Button 1
+      ellipse(200, 380, 5, 5); // Button 2
+      ellipse(200, 400, 5, 5); // Button 3
+
+      // Star
+      drawStar(400, 195, 20, 5); // Position the star at the top of the tree
+
+      // Calculate time elapsed in the current loop
+      let timeElapsed = millis() - animationStartTime;
+
+      // Phase 1: Move in from the left
+      if (timeElapsed < 4000) {
+        textX = map(timeElapsed, 0, 4000, -400, width / 2 - 250);
+      }
+      // Phase 2: Stay in the center for 3 seconds
+      else if (timeElapsed < 7000) {
+        textX = width / 2 - 250;
+      }
+      // Phase 3: Leave the screen
+      else if (timeElapsed < 10000) {
+        textX = map(timeElapsed, 7000, 10000, width / 2 - 200, width);
+      }
+
+      // Display the text
+      let gradient = drawingContext.createLinearGradient(textX, 0, textX + 400, 50);
+      gradient.addColorStop(0, "rgb(255, 0, 0)"); // Red
+      gradient.addColorStop(0.5, "rgb(255, 255, 255)"); // White
+      gradient.addColorStop(1, "rgb(0, 128, 0)"); // Green
+      drawingContext.fillStyle = gradient;
+      text("Happy Holidays from Taylor Dorsett!", textX, 50);
+
+      // Reset text position and animation start time
+      if (timeElapsed >= 10000) {
+        textX = -400; // Reset to start off-screen on the left
+        animationStartTime = millis();
+      }
+    }
+
+    function drawGift(x, y, w, h, col) {
+      fill(col);
+      rect(x, y, w, h); // Gift box
+      fill(255, 215, 0); // Yellow color for bow
+      rect(x + w / 2 - 5, y, 10, h); // Vertical ribbon  
+      rect(x, y + h / 2 - 5, w, 10); // Horizontal ribbon
+      // Draw the bow
+      beginShape();
+      vertex(x + w / 2 - 5, y - 10);
+      bezierVertex(x + w / 2 - 5, y - 20, x + w / 2 + 5, y - 20, x + w / 2 + 5, y - 10);
+      bezierVertex(x + w / 2 + 5, y - 5, x + w / 2 - 5, y, x + w / 2 - 5, y - 10);
+      endShape(CLOSE);
+    }
+
+    function drawTreeLights() {
+      // Roughly xWithinBounds = 350 to 435
+      // Roughly yWithinBounds = 275 to 420
+      let lights = [
+        // Top layer (close to the tip of the tree)
+        { x: 400, y: 280, color: color(255, 0, 0) }, // Red
+
+        // Second layer
+        { x: 390, y: 305, color: color(0, 0, 255) }, // Blue
+        { x: 410, y: 305, color: color(0, 255, 0) }, // Green
+
+        // Third layer
+        { x: 380, y: 330, color: color(255, 0, 0) }, // Red
+        { x: 400, y: 330, color: color(0, 0, 255) }, // Blue
+        { x: 420, y: 330, color: color(0, 255, 0) }, // Green
+
+        // Fourth layer
+        { x: 370, y: 355, color: color(255, 0, 0) }, // Red
+        { x: 390, y: 355, color: color(0, 0, 255) }, // Blue
+        { x: 410, y: 355, color: color(0, 255, 0) }, // Green
+        { x: 430, y: 355, color: color(255, 0, 0) }, // Red
+
+        // Fifth layer
+        { x: 360, y: 380, color: color(0, 0, 255) }, // Blue
+        { x: 380, y: 380, color: color(0, 255, 0) }, // Green
+        { x: 400, y: 380, color: color(255, 0, 0) }, // Red
+        { x: 420, y: 380, color: color(0, 0, 255) }, // Blue
+        { x: 440, y: 380, color: color(0, 255, 0) }, // Green
+
+        // Base layer
+        { x: 350, y: 405, color: color(255, 0, 0) }, // Red
+        { x: 370, y: 405, color: color(0, 0, 255) }, // Blue
+        { x: 390, y: 405, color: color(0, 255, 0) }, // Green
+        { x: 410, y: 405, color: color(255, 0, 0) }, // Red
+        { x: 430, y: 405, color: color(0, 0, 255) }, // Blue
+        { x: 450, y: 405, color: color(0, 255, 0) }  // Green
+      ];
+
+      // Current time in milliseconds
+      let currentTime = millis();
+
+      // Loop through each light and draw it conditionally
+      for (let i = 0; i < lights.length; i++) {
+        // Check if the light should be on or off based on the current time
+        if (Math.floor(currentTime / 2000) % 2 === i % 2) {
+          fill(lights[i].color);
+          ellipse(lights[i].x, lights[i].y, 10, 10);
+        }
+      }
+    }
+
+    function drawStar(x, y, radius, points) {
+        let angle = TWO_PI / points;
+        let halfAngle = angle / 2.0;
+        let starSize = radius + sin(frameCount * 0.1) * 2; // Glowing effect
+
+        fill(255, 223, 0); // Yellow color for the star
+        beginShape();
+        for (let a = 0; a < TWO_PI; a += angle) {
+          let sx = x + cos(a) * starSize;
+          let sy = y + sin(a) * starSize;
+          vertex(sx, sy);
+          sx = x + cos(a + halfAngle) * starSize / 2;
+          sy = y + sin(a + halfAngle) * starSize / 2;
+          vertex(sx, sy);
+        }
+        endShape(CLOSE);
+      }
+  </script>
+</body>
+
+</html>
