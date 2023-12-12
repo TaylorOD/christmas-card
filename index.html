@@ -138,11 +138,11 @@
 
       // Phase 1: Move in from the left
       if (timeElapsed < 4000) {
-        textX = map(timeElapsed, 0, 4000, -400, width / 2 - 250);
+        textX = map(timeElapsed, 0, 4000, -400, width / 2 - 225);
       }
       // Phase 2: Stay in the center for 3 seconds
       else if (timeElapsed < 7000) {
-        textX = width / 2 - 250;
+        textX = width / 2 - 225;
       }
       // Phase 3: Leave the screen
       else if (timeElapsed < 10000) {
@@ -155,7 +155,7 @@
       gradient.addColorStop(0.5, "rgb(255, 255, 255)"); // White
       gradient.addColorStop(1, "rgb(0, 128, 0)"); // Green
       drawingContext.fillStyle = gradient;
-      text("Happy Holidays from Taylor Dorsett!", textX, 50);
+      text("Happy Holidays from FE Guild!", textX, 50);
 
       // Reset text position and animation start time
       if (timeElapsed >= 10000) {
