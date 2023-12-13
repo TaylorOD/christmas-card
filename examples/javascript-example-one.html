@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Circle Drawing</title>
+</head>
+
+<body>
+  <canvas id="myCanvas" width="400" height="400"></canvas>
+  <script>
+    var canvas = document.getElementById('myCanvas');
+    var ctx = canvas.getContext('2d');
+
+    // Set background color
+    ctx.fillStyle = '#FFFFFF'; // White
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Draw a circle
+    ctx.beginPath();
+    ctx.arc(200, 200, 50, 0, Math.PI * 2, true); // Circle at (200,200) with radius 50
+    ctx.fillStyle = 'rgb(100, 200, 150)'; // RGB color
+    ctx.fill();
+  </script>
+</body>
+
+</html>
