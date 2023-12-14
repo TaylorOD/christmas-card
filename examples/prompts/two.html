@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Animated Christmas Scene with Gifts</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+  <style>
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    canvas {
+      border: 1px solid black;
+    }
+  </style>
+</head>
+
+<body>
+  <script>
+    function setup() {
+      createCanvas(800, 600);
+    }
+
+    function draw() {
+      // Gifts
+      drawGift(330, 470, 40, 30, color(255, 0, 0)); // Red gift
+      drawGift(420, 480, 30, 20, color(0, 128, 0)); // Green gift
+      drawGift(360, 500, 45, 35, color(255, 0, 0)); // Red gift
+      drawGift(450, 460, 25, 25, color(0, 128, 0)); // Green gift
+      drawGift(400, 500, 50, 40, color(255, 0, 0)); // Red gift
+    }
+
+    function drawGift(x, y, w, h, col) {
+      fill(col);
+      rect(x, y, w, h); // Gift box
+      fill(255, 215, 0); // Yellow color for bow
+      rect(x + w / 2 - 5, y, 10, h); // Vertical ribbon
+      rect(x, y + h / 2 - 5, w, 10); // Horizontal ribbon
+      ellipse(x + w / 2, y + h / 2, 10, 10); // Knot of the bow
+    }
+  </script>
+</body>
+
+</html>

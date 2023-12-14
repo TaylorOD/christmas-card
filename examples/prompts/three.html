@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Christmas Scene with Tree Lights</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+  <style>
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    canvas {
+      border: 1px solid black;
+    }
+  </style>
+</head>
+
+<body>
+  <script>
+    function setup() {
+      createCanvas(800, 600);
+    }
+
+    function draw() {
+      background(135, 206, 235); // Light blue background for sky
+
+      // Snow
+      fill(255);
+      noStroke();
+      for (let i = 0; i < width; i += 30) {
+        let snowY = noise(i * 0.01, frameCount * 0.01) * height;
+        ellipse(i, snowY, 5, 5);
+      }
+
+      // Tree
+      fill(34, 139, 34); // Dark green color
+      triangle(400, 200, 350, 350, 450, 350);
+      triangle(400, 250, 325, 400, 475, 400);
+      triangle(400, 300, 300, 450, 500, 450);
+
+      // Trunk
+      fill(139, 69, 19); // Brown color
+      rect(390, 450, 20, 50);
+
+      // Tree Lights
+      drawTreeLights();
+
+      // Gifts
+      drawGift(330, 470, 40, 30, color(255, 0, 0)); // Red gift
+      drawGift(420, 480, 30, 20, color(0, 128, 0)); // Green gift
+      drawGift(360, 500, 45, 35, color(255, 0, 0)); // Red gift
+      drawGift(450, 460, 25, 25, color(0, 128, 0)); // Green gift
+      drawGift(400, 500, 50, 40, color(255, 0, 0)); // Red gift
+
+      // Snowman
+      fill(255); // White color for snowman
+      ellipse(200, 450, 100, 100); // Bottom circle
+      ellipse(200, 380, 75, 75); // Middle circle
+      ellipse(200, 320, 50, 50); // Top circle
+
+      // Decorations
+      fill(255, 0, 0); // Red color
+      ellipse(200, 320, 10, 10); // Red nose
+      fill(0); // Black color for eyes and buttons
+      ellipse(190, 310, 5, 5); // Left eye
+      ellipse(210, 310, 5, 5); // Right eye
+      ellipse(200, 380, 5, 5); // Button 1
+      ellipse(200, 400, 5, 5); // Button 2
+      ellipse(200, 420, 5, 5); // Button 3
+
+      // Star
+      drawStar(400, 195, 20, 5); // Position the star at the top of the tree
+    }
+
+    function drawGift(x, y, w, h, col) {
+      fill(col);
+      rect(x, y, w, h); // Gift box
+      fill(255, 215, 0); // Yellow color for bow
+      rect(x + w / 2 - 5, y, 10, h); // Vertical ribbon
+      rect(x, y + h / 2 - 5, w, 10); // Horizontal ribbon
+      ellipse(x + w / 2, y + h / 2, 10, 10); // Knot of the bow
+    }
+
+    function drawTreeLights() {
+      let lights = [
+        { x: 375, y: 300, color: color(255, 0, 0) }, // Red
+        { x: 425, y: 300, color: color(0, 0, 255) }, // Blue
+        { x: 350, y: 325, color: color(255, 0, 0) }, // Red
+        { x: 450, y: 325, color: color(0, 0, 255) }, // Blue
+        { x: 325, y: 375, color: color(255, 0, 0) }, // Red
+        { x: 475, y: 375, color: color(0, 0, 255) }, // Blue
+        { x: 400, y: 275, color: color(255, 0, 0) }, // Red
+        { x: 400, y: 350, color: color(0, 0, 255) }, // Blue
+        { x: 370, y: 350, color: color(255, 0, 0) }, // Red
+        { x: 430, y: 350, color: color(0, 0, 255) }  // Blue
+      ];
+
+      for (let light of lights) {
+        fill(light.color);
+        ellipse(light.x, light.y, 10, 10);
+      }
+    }
+    
+    function drawStar(x, y, radius, points) {
+      let angle = TWO_PI / points;
+      let halfAngle = angle / 2.0;
+      let starSize = radius + sin(frameCount * 0.1) * 2; // Glowing effect
+
+      fill(255, 223, 0); // Yellow color for the star
+      beginShape();
+      for (let a = 0; a < TWO_PI; a += angle) {
+        let sx = x + cos(a) * starSize;
+        let sy = y + sin(a) * starSize;
+        vertex(sx, sy);
+        sx = x + cos(a + halfAngle) * starSize / 2;
+        sy = y + sin(a + halfAngle) * starSize / 2;
+        vertex(sx, sy);
+      }
+      endShape(CLOSE);
+    }
+
+  </script>
+</body>
+
+</html>
