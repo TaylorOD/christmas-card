@@ -73,7 +73,9 @@
       drawMantel();
       drawTree(690, 520);
       drawRug();
+      drawCat(470, 566);
       drawCocoa(150, 520);
+      drawFirelight();
       drawMessage();
       boost = max(0, boost - 0.02);
     }
@@ -311,6 +313,81 @@
       strokeWeight(3);
       ellipse(400, 575, 380, 34);
       noStroke();
+    }
+
+    function drawCat(x, y) {
+      // a ginger cat curled up asleep by the fire
+      let breath = 1 + 0.04 * sin(frameCount * 0.05);
+      noStroke();
+      fill(0, 0, 0, 50);
+      ellipse(x, y + 10, 110, 16);
+      push();
+      translate(x, y);
+      // tail curling around the front, with a lazy flick
+      let flick = sin(frameCount * 0.03) * 0.25;
+      noFill();
+      stroke(205, 120, 50);
+      strokeWeight(11);
+      beginShape();
+      curveVertex(38, -4);
+      curveVertex(38, -4);
+      curveVertex(30, 8);
+      curveVertex(0, 10);
+      curveVertex(-30, 6 + flick * 10);
+      curveVertex(-40, -2 + flick * 16);
+      curveVertex(-40, -2 + flick * 16);
+      endShape();
+      noStroke();
+      // body
+      fill(225, 140, 60);
+      ellipse(0, -14, 92 * breath, 46 * breath);
+      // stripes
+      stroke(190, 105, 40);
+      strokeWeight(4);
+      for (let i = -2; i <= 2; i++) {
+        let sx = i * 13;
+        line(sx, -34 * breath, sx + 4, -24 * breath);
+      }
+      noStroke();
+      // head tucked in on the left
+      fill(230, 148, 66);
+      ellipse(-36, -16, 40, 34);
+      // ears (one twitches now and then)
+      let twitch = (frameCount % 240 < 8) ? -4 : 0;
+      fill(220, 130, 55);
+      triangle(-52, -26, -48, -44 + twitch, -38, -30);
+      triangle(-34, -31, -26, -46, -22, -28);
+      fill(240, 170, 160);
+      triangle(-49, -29, -47, -39 + twitch, -41, -31);
+      // closed eyes and nose
+      stroke(90, 50, 30);
+      strokeWeight(2);
+      noFill();
+      arc(-44, -16, 8, 5, 0, PI);
+      arc(-30, -17, 8, 5, 0, PI);
+      noStroke();
+      fill(220, 110, 110);
+      triangle(-39, -10, -35, -10, -37, -7);
+      pop();
+      // sleepy z's
+      let t = (frameCount % 150) / 150;
+      fill(255, 245, 225, 220 * (1 - t));
+      textFont("sans-serif");
+      textSize(12 + t * 8);
+      textAlign(CENTER, CENTER);
+      text("z", x - 50 + t * 10, y - 52 - t * 36);
+      textFont("Pacifico");
+    }
+
+    function drawFirelight() {
+      // dark vignette plus a flicker that pulses the whole room with the fire
+      let ctx = drawingContext;
+      let flick = noise(frameCount * 0.08) * 0.12 - boost * 0.08;
+      let g = ctx.createRadialGradient(FIRE_X, 440, 120, FIRE_X, 380, 620);
+      g.addColorStop(0, "rgba(0,0,0,0)");
+      g.addColorStop(1, "rgba(15,5,0," + (0.55 + flick) + ")");
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, W, H);
     }
 
     function drawCocoa(x, y) {
