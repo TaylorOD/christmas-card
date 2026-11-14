@@ -10,19 +10,25 @@
   <link rel="shortcut icon" type="image/png" href="../favicon.png" />
 
   <style>
+    html, body {
+      margin: 0;
+      height: 100%;
+      overflow: hidden;
+    }
+
     body {
       display: flex;
       justify-content: center;
       align-items: center;
-      height: 100vh;
-      margin: 0;
       background: #0b1026;
     }
 
     canvas {
-      border: 1px solid black;
-      max-width: 100%;
+      display: block;
+      width: 100% !important;
       height: auto !important;
+      max-height: 100vh;
+      object-fit: contain;
     }
   </style>
 </head>

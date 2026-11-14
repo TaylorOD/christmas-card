@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Happy Holidays 2024</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.4/p5.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">
+  <link rel="shortcut icon" type="image/png" href="../favicon.png" />
+
+  <style>
+    html, body {
+      margin: 0;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: #2a1712;
+    }
+
+    canvas {
+      display: block;
+      width: 100% !important;
+      height: auto !important;
+      max-height: 100vh;
+      object-fit: contain;
+    }
+  </style>
+</head>
+
+<body>
+  <script>
+    // 2024: a cozy fireplace on Christmas Eve.
+    // Click the fire to toss on a log and send up a shower of sparks.
+
+    const W = 800;
+    const H = 600;
+    const FIRE_X = 400;
+    const FIRE_Y = 470;
+
+    let sparks = [];
+    let flakes = [];
+    let boost = 0;
+    let startTime;
+
+    const STOCKINGS = [
+      { x: 250, c: [200, 40, 50], name: "T" },
+      { x: 340, c: [40, 130, 70], name: "" },
+      { x: 460, c: [50, 90, 180], name: "" },
+      { x: 550, c: [200, 40, 50], name: "" }
+    ];
+
+    function setup() {
+      createCanvas(W, H);
+      textFont("Pacifico");
+      startTime = millis();
+      for (let i = 0; i < 70; i++) {
+        flakes.push({ x: random(40, 200), y: random(140, 330), s: random(0.4, 1.2), r: random(2, 4) });
+      }
+    }
+
+    function draw() {
+      drawRoom();
+      drawWindow(40, 140);
+      drawFireplace();
+      drawFire();
+      drawSparks();
+      drawMantel();
+      drawTree(690, 520);
+      drawRug();
+      drawCocoa(150, 520);
+      drawMessage();
+      boost = max(0, boost - 0.02);
+    }
+
+    function drawRoom() {
+      background(120, 45, 40);
+      // wallpaper stripes
+      noStroke();
+      for (let x = 0; x < W; x += 40) {
+        fill(110, 40, 36);
+        rect(x, 0, 20, H);
+      }
+      // warm glow from the fire
+      let ctx = drawingContext;
+      let g = ctx.createRadialGradient(FIRE_X, FIRE_Y, 20, FIRE_X, FIRE_Y, 420 + boost * 80);
+      g.addColorStop(0, "rgba(255,170,70," + (0.45 + 0.08 * sin(frameCount * 0.2) + boost * 0.2) + ")");
+      g.addColorStop(1, "rgba(255,120,40,0)");
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, W, H);
+      // floor
+      fill(90, 55, 35);
+      rect(0, 540, W, 60);
+      stroke(70, 42, 26);
+      strokeWeight(2);
+      for (let x = 0; x < W; x += 90) line(x, 540, x, H);
+      noStroke();
+    }
+
+    function drawWindow(x, y) {
+      fill(20, 30, 70);
+      rect(x, y, 160, 200);
+      noStroke();
+      fill(255);
+      for (let f of flakes) {
+        f.y += f.s;
+        f.x += sin(frameCount * 0.03 + f.y * 0.05) * 0.3;
+        if (f.y > y + 195) { f.y = y + 5; f.x = random(x + 5, x + 155); }
+        ellipse(f.x, f.y, f.r);
+      }
+      // snow drift on the sill outside
+      fill(240, 245, 255);
+      arc(x + 80, y + 200, 160, 40, PI, TWO_PI);
+      // frame
+      noFill();
+      stroke(235, 225, 205);
+      strokeWeight(8);
+      rect(x, y, 160, 200);
+      strokeWeight(5);
+      line(x + 80, y, x + 80, y + 200);
+      line(x, y + 100, x + 160, y + 100);
+      noStroke();
+      // little wreath on the window
+      noFill();
+      stroke(30, 110, 55);
+      strokeWeight(7);
+      ellipse(x + 80, y + 100, 34);
+      noStroke();
+      fill(210, 30, 40);
+      triangle(x + 80, y + 116, x + 72, y + 128, x + 88, y + 128);
+    }
+
+    function drawFireplace() {
+      // brick surround
+      fill(150, 70, 50);
+      rect(220, 300, 360, 240);
+      stroke(110, 50, 35);
+      strokeWeight(2);
+      for (let row = 0; row < 12; row++) {
+        let yy = 300 + row * 20;
+        line(220, yy, 580, yy);
+        let off = row % 2 === 0 ? 0 : 20;
+        for (let xx = 220 + off; xx < 580; xx += 40) line(xx, yy, xx, yy + 20);
+      }
+      noStroke();
+      // firebox
+      fill(25, 15, 12);
+      rect(290, 370, 220, 170, 90, 90, 0, 0);
+      // hearth
+      fill(70, 70, 75);
+      rect(200, 530, 400, 14, 3);
+    }
+
+    function drawFire() {
+      // logs
+      fill(95, 55, 30);
+      push();
+      translate(FIRE_X, 515);
+      rotate(-0.12);
+      rect(-80, -10, 160, 20, 8);
+      rotate(0.24);
+      rect(-80, -10, 160, 20, 8);
+      pop();
+      // flames: layered noisy tongues
+      let layers = [
+        { c: [230, 60, 20], h: 120, w: 70 },
+        { c: [255, 140, 30], h: 90, w: 52 },
+        { c: [255, 220, 90], h: 55, w: 32 }
+      ];
+      for (let L of layers) {
+        fill(L.c[0], L.c[1], L.c[2], 230);
+        for (let i = -2; i <= 2; i++) {
+          let n = noise(i * 3.1, frameCount * 0.06);
+          let fh = L.h * (0.6 + n * 0.8) * (1 + boost * 0.6);
+          let fx = FIRE_X + i * L.w * 0.45;
+          let sway = (noise(i, frameCount * 0.04) - 0.5) * 30;
+          beginShape();
+          vertex(fx - L.w / 2, 508);
+          bezierVertex(fx - L.w / 2, 508 - fh * 0.5, fx + sway, 508 - fh * 0.7, fx + sway, 508 - fh);
+          bezierVertex(fx + sway, 508 - fh * 0.7, fx + L.w / 2, 508 - fh * 0.5, fx + L.w / 2, 508);
+          endShape(CLOSE);
+        }
+      }
+      if (random() < 0.25 + boost) {
+        sparks.push({ x: FIRE_X + random(-50, 50), y: 460, vx: random(-0.6, 0.6), vy: random(-2.5, -1), a: 255 });
+      }
+    }
+
+    function drawSparks() {
+      noStroke();
+      for (let i = sparks.length - 1; i >= 0; i--) {
+        let s = sparks[i];
+        s.x += s.vx;
+        s.y += s.vy;
+        s.a -= 5;
+        fill(255, 200, 80, s.a);
+        ellipse(s.x, s.y, 3);
+        if (s.a <= 0 || s.y < 372) sparks.splice(i, 1);
+      }
+    }
+
+    function drawMantel() {
+      fill(70, 40, 25);
+      rect(195, 285, 410, 22, 4);
+      // garland with lights along the mantel
+      stroke(30, 100, 50);
+      strokeWeight(10);
+      noFill();
+      beginShape();
+      for (let x = 200; x <= 600; x += 10) vertex(x, 300 + 10 * sin((x - 200) / 400 * PI * 3));
+      endShape();
+      noStroke();
+      for (let i = 0; i < 12; i++) {
+        let x = 215 + i * 34;
+        let y = 300 + 10 * sin((x - 200) / 400 * PI * 3);
+        let on = (floor(frameCount / 25) + i) % 2 === 0;
+        let cols = [[255, 80, 80], [255, 220, 90], [100, 200, 255]];
+        let c = cols[i % 3];
+        fill(c[0], c[1], c[2], on ? 255 : 90);
+        ellipse(x, y + 4, 7, 10);
+      }
+      // candles
+      drawCandle(220, 285);
+      drawCandle(580, 285);
+      // stockings hang below the mantel
+      for (let s of STOCKINGS) drawStocking(s.x, 307, s.c);
+    }
+
+    function drawCandle(x, y) {
+      fill(245, 235, 210);
+      rect(x - 6, y - 36, 12, 36, 2);
+      let f = noise(x, frameCount * 0.1);
+      fill(255, 200, 60, 80);
+      ellipse(x, y - 44, 22 + f * 6);
+      fill(255, 210, 80);
+      ellipse(x, y - 44, 7, 14 + f * 4);
+    }
+
+    function drawStocking(x, y, c) {
+      let sway = sin(frameCount * 0.03 + x) * 1.5;
+      push();
+      translate(x, y);
+      rotate(radians(sway));
+      fill(c[0], c[1], c[2]);
+      beginShape();
+      vertex(-14, 10);
+      vertex(14, 10);
+      vertex(14, 62);
+      bezierVertex(14, 72, 30, 70, 34, 78);
+      bezierVertex(38, 92, 10, 96, -2, 86);
+      bezierVertex(-12, 80, -14, 72, -14, 62);
+      endShape(CLOSE);
+      fill(250);
+      rect(-17, 0, 34, 16, 5);
+      pop();
+    }
+
+    function drawTree(x, base) {
+      fill(80, 50, 30);
+      rect(x - 8, base - 30, 16, 30);
+      fill(25, 100, 55);
+      for (let i = 0; i < 4; i++) {
+        let w = 120 - i * 26;
+        let top = base - 60 - i * 55;
+        triangle(x, top - 50, x - w / 2, top + 30, x + w / 2, top + 30);
+      }
+      // baubles
+      let pts = [[-30, -50], [20, -70], [-15, -110], [25, -140], [-20, -170], [5, -210], [35, -45], [-40, -85]];
+      let cols = [[220, 40, 50], [255, 200, 60], [90, 150, 255]];
+      for (let i = 0; i < pts.length; i++) {
+        let c = cols[i % 3];
+        let tw = 180 + 75 * sin(frameCount * 0.08 + i);
+        fill(c[0], c[1], c[2], tw);
+        ellipse(x + pts[i][0], base + pts[i][1], 11);
+      }
+      // star
+      push();
+      translate(x, base - 300);
+      rotate(frameCount * 0.01);
+      fill(255, 215, 0);
+      beginShape();
+      for (let a = 0; a < TWO_PI; a += TWO_PI / 5) {
+        vertex(cos(a - HALF_PI) * 14, sin(a - HALF_PI) * 14);
+        vertex(cos(a - HALF_PI + PI / 5) * 6, sin(a - HALF_PI + PI / 5) * 6);
+      }
+      endShape(CLOSE);
+      pop();
+      // presents
+      drawPresent(x - 50, base - 10, 34, 26, [200, 40, 50]);
+      drawPresent(x + 22, base - 6, 28, 22, [40, 120, 200]);
+    }
+
+    function drawPresent(x, y, w, h, c) {
+      fill(c[0], c[1], c[2]);
+      rect(x, y - h + 20, w, h);
+      fill(255, 220, 90);
+      rect(x + w / 2 - 3, y - h + 20, 6, h);
+      rect(x, y - h / 2 + 17, w, 6);
+    }
+
+    function drawRug() {
+      fill(150, 30, 40);
+      ellipse(400, 575, 420, 46);
+      noFill();
+      stroke(230, 190, 90);
+      strokeWeight(3);
+      ellipse(400, 575, 380, 34);
+      noStroke();
+    }
+
+    function drawCocoa(x, y) {
+      fill(245, 240, 230);
+      rect(x - 18, y, 36, 36, 0, 0, 8, 8);
+      noFill();
+      stroke(245, 240, 230);
+      strokeWeight(5);
+      arc(x + 20, y + 16, 18, 18, -HALF_PI, HALF_PI);
+      noStroke();
+      fill(110, 60, 35);
+      ellipse(x, y + 2, 34, 8);
+      // steam
+      noFill();
+      stroke(255, 255, 255, 120);
+      strokeWeight(2);
+      for (let i = -1; i <= 1; i++) {
+        beginShape();
+        for (let t = 0; t < 30; t += 3) vertex(x + i * 9 + sin(t * 0.25 + frameCount * 0.08) * 4, y - 6 - t);
+        endShape();
+      }
+      noStroke();
+    }
+
+    function drawMessage() {
+      let t = (millis() - startTime) / 1000;
+      let a = constrain(map(t, 0.3, 2, 0, 255), 0, 255);
+      textAlign(CENTER, CENTER);
+      textSize(40);
+      fill(0, 0, 0, a * 0.4);
+      text("Happy Holidays from Taylor Dorsett!", W / 2 + 2, 62);
+      fill(255, 235, 200, a);
+      text("Happy Holidays from Taylor Dorsett!", W / 2, 60);
+      textSize(24);
+      fill(255, 210, 110, a);
+      text("Warm wishes for 2024", W / 2, 108);
+    }
+
+    function mousePressed() {
+      boost = 1;
+      for (let i = 0; i < 40; i++) {
+        sparks.push({ x: FIRE_X + random(-40, 40), y: 470, vx: random(-1.5, 1.5), vy: random(-4, -1.5), a: 255 });
+      }
+    }
+  </script>
+</body>
+
+</html>

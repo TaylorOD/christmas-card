@@ -4,93 +4,200 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Happy Holidays from Taylor Dorsett</title>
-  <link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">
+  <title>Holiday Cards</title>
+  <meta name="description" content="Holiday cards from Taylor Dorsett. Each year, the best AI model available makes the card.">
+  <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="shortcut icon" type="image/png" href="favicon.png" />
 
   <style>
+    :root {
+      --bg: #f6f1e7;
+      --ink: #2a2622;
+      --muted: #6b6259;
+      --red: #b3202a;
+      --green: #1f6b45;
+      --card: #ffffff;
+      --line: #e3d9c8;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
     body {
       margin: 0;
       min-height: 100vh;
+      background:
+        radial-gradient(circle at 15% 10%, rgba(179, 32, 42, 0.08), transparent 40%),
+        radial-gradient(circle at 85% 90%, rgba(31, 107, 69, 0.10), transparent 45%),
+        var(--bg);
+      color: var(--ink);
+      font-family: "Inter", system-ui, sans-serif;
+      display: flex;
+      justify-content: center;
+      padding: 32px 16px 48px;
+    }
+
+    main {
+      width: 100%;
+      max-width: 860px;
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 16px;
-      padding: 16px;
-      box-sizing: border-box;
-      background: #f4efe6;
-      font-family: system-ui, sans-serif;
-      color: #2b2b2b;
-    }
-
-    header {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      flex-wrap: wrap;
-      justify-content: center;
+      gap: 20px;
     }
 
     h1 {
       font-family: "Pacifico", cursive;
       font-weight: normal;
-      font-size: 28px;
+      font-size: clamp(32px, 6vw, 48px);
       margin: 0;
-      color: #b3202a;
+      color: var(--red);
+      text-align: center;
+      line-height: 1.2;
     }
 
-    label {
+    .intro {
+      margin: -6px 0 0;
+      max-width: 560px;
+      text-align: center;
+      color: var(--muted);
       font-size: 16px;
+      line-height: 1.55;
     }
 
-    select {
-      font-size: 16px;
-      padding: 6px 10px;
-      border-radius: 6px;
-      border: 1px solid #999;
-      background: white;
+    .years {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px;
+      padding: 0;
+      margin: 0;
+      list-style: none;
+    }
+
+    .years button {
+      font: inherit;
+      font-weight: 500;
+      font-size: 15px;
+      padding: 8px 18px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: var(--card);
+      color: var(--ink);
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+    }
+
+    .years button:hover {
+      border-color: var(--green);
+    }
+
+    .years button[aria-pressed="true"] {
+      background: var(--green);
+      border-color: var(--green);
+      color: #fff;
+    }
+
+    .years button:focus-visible {
+      outline: 3px solid rgba(31, 107, 69, 0.35);
+      outline-offset: 2px;
+    }
+
+    .frame {
+      width: 100%;
+      max-width: 812px;
+      aspect-ratio: 4 / 3;
+      border-radius: 14px;
+      overflow: hidden;
+      background: #111;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08), 0 12px 32px rgba(60, 40, 20, 0.18);
+      border: 6px solid var(--card);
     }
 
     iframe {
+      display: block;
       width: 100%;
-      max-width: 802px;
-      aspect-ratio: 802 / 602;
+      height: 100%;
       border: 0;
+    }
+
+    .credit {
+      margin: 0;
+      font-size: 14px;
+      color: var(--muted);
+      text-align: center;
+      min-height: 1.4em;
+    }
+
+    .credit strong {
+      color: var(--ink);
+      font-weight: 600;
+    }
+
+    footer {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    footer a {
+      color: var(--green);
     }
   </style>
 </head>
 
 <body>
-  <header>
-    <h1>Holiday Cards</h1>
-    <label for="year">Year:</label>
-    <select id="year"></select>
-  </header>
+  <main>
+    <h1>Happy Holidays!</h1>
+    <p class="intro">
+      Every year, the best AI model available makes a holiday card.
+      Pick a year to see how far they've come.
+    </p>
 
-  <iframe id="card" title="Holiday card"></iframe>
+    <ul class="years" id="years" aria-label="Choose a year"></ul>
+
+    <div class="frame">
+      <iframe id="card" title="Holiday card" scrolling="no"></iframe>
+    </div>
+
+    <p class="credit" id="credit"></p>
+
+    <footer>From Taylor Dorsett · <a href="https://github.com/TaylorOD/christmas-card">source on GitHub</a></footer>
+  </main>
 
   <script>
-    // To add a new year: drop cards/<year>.html in place and add the year here.
-    const YEARS = [2026, 2023];
+    // To add a new year: create cards/<year>.html and add an entry here (newest first).
+    const CARDS = [
+      { year: 2026, credit: "Made by <strong>Claude</strong>, the best model available in 2026." },
+      { year: 2025, credit: "Made in 2026 by <strong>Claude</strong>, imagining 2025's card." },
+      { year: 2024, credit: "Made in 2026 by <strong>Claude</strong>, imagining 2024's card." },
+      { year: 2023, credit: "Made with <strong>ChatGPT (GPT-4)</strong>, with fine-tuning by Taylor." }
+    ];
 
-    const select = document.getElementById("year");
+    const list = document.getElementById("years");
     const frame = document.getElementById("card");
+    const credit = document.getElementById("credit");
+    const buttons = {};
 
-    for (const y of YEARS) {
-      const opt = document.createElement("option");
-      opt.value = y;
-      opt.textContent = y;
-      select.appendChild(opt);
+    for (const c of CARDS) {
+      const li = document.createElement("li");
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.textContent = c.year;
+      btn.addEventListener("click", () => show(c.year));
+      li.appendChild(btn);
+      list.appendChild(li);
+      buttons[c.year] = btn;
     }
 
     function show(year) {
-      if (!YEARS.includes(year)) year = YEARS[0];
-      select.value = year;
-      frame.src = "cards/" + year + ".html";
-      history.replaceState(null, "", "#" + year);
+      const card = CARDS.find(c => c.year === year) || CARDS[0];
+      for (const y in buttons) buttons[y].setAttribute("aria-pressed", String(Number(y) === card.year));
+      frame.src = "cards/" + card.year + ".html";
+      credit.innerHTML = card.credit;
+      history.replaceState(null, "", "#" + card.year);
     }
 
-    select.addEventListener("change", () => show(Number(select.value)));
     window.addEventListener("hashchange", () => show(Number(location.hash.slice(1))));
     show(Number(location.hash.slice(1)));
   </script>
