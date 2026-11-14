@@ -46,6 +46,7 @@
 
     let flakes = [];
     let shake = 0;
+    let glitter = [];
     let startTime;
 
     function setup() {
@@ -73,8 +74,10 @@
       let jiggle = shake * 6 * sin(frameCount * 0.9);
       push();
       translate(jiggle, 0);
+      drawGlow();
       drawGlobeInside();
       drawFlakes();
+      drawGlitter();
       drawGlass();
       drawBase();
       pop();
@@ -97,18 +100,73 @@
       ellipse(CX, 548, 380, 26);
     }
 
+    function drawGlow() {
+      // warm light from the village spilling onto the table
+      let ctx = drawingContext;
+      let g = ctx.createRadialGradient(CX, CY + 60, 40, CX, CY + 60, R + 160);
+      g.addColorStop(0, "rgba(255,210,140,0.22)");
+      g.addColorStop(1, "rgba(255,210,140,0)");
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, W, H);
+    }
+
+    function drawGlitter() {
+      if (shake > 0.6 && frameCount % 2 === 0) {
+        for (let i = 0; i < 6; i++) {
+          let a = random(TWO_PI);
+          let d = sqrt(random()) * (R - 20);
+          glitter.push({ x: CX + cos(a) * d, y: CY + sin(a) * d, vx: random(-1, 1), vy: random(-1.5, 0.5), life: 255, hue: random() });
+        }
+      }
+      noStroke();
+      for (let i = glitter.length - 1; i >= 0; i--) {
+        let g = glitter[i];
+        g.vx *= 0.97;
+        g.vy = g.vy * 0.97 + 0.015;
+        g.x += g.vx;
+        g.y += g.vy;
+        g.life -= 1.6;
+        let tw = 0.5 + 0.5 * sin(frameCount * 0.4 + i);
+        if (g.hue < 0.5) fill(255, 220, 110, g.life * tw);
+        else fill(255, 255, 255, g.life * tw);
+        let r = 1.5 + tw * 2;
+        rect(g.x - r / 2, g.y - r / 2, r, r);
+        if (g.life <= 0 || dist(g.x, g.y, CX, CY) > R - 6) glitter.splice(i, 1);
+      }
+    }
+
     function drawBase() {
       noStroke();
-      fill(110, 60, 35);
-      quad(CX - 170, 540, CX + 170, 540, CX + 140, 480, CX - 140, 480);
+      // wooden base with gold trim
+      fill(105, 55, 32);
+      quad(CX - 170, 540, CX + 170, 540, CX + 140, 478, CX - 140, 478);
+      fill(85, 45, 26);
+      quad(CX - 170, 540, CX + 170, 540, CX + 166, 530, CX - 166, 530);
+      fill(212, 175, 90);
+      rect(CX - 152, 468, 304, 6, 3);
       fill(130, 75, 45);
-      rect(CX - 150, 470, 300, 18, 8);
-      fill(255, 215, 90);
-      rect(CX - 60, 500, 120, 26, 6);
-      fill(110, 60, 35);
+      rect(CX - 150, 472, 300, 14, 6);
+      fill(212, 175, 90);
+      rect(CX - 158, 524, 316, 5, 2);
+      // little engraved snowflakes
+      stroke(212, 175, 90, 180);
+      strokeWeight(1.5);
+      for (let sx of [CX - 110, CX + 110]) {
+        for (let k = 0; k < 3; k++) {
+          let a = k * PI / 3;
+          line(sx - cos(a) * 9, 505 - sin(a) * 9, sx + cos(a) * 9, 505 + sin(a) * 9);
+        }
+      }
+      noStroke();
+      // brass plaque
+      fill(170, 130, 55);
+      rect(CX - 64, 494, 128, 26, 6);
+      fill(240, 205, 115);
+      rect(CX - 61, 497, 122, 20, 5);
+      fill(95, 55, 30);
       textAlign(CENTER, CENTER);
-      textSize(15);
-      text("2025", CX, 511);
+      textSize(14);
+      text("Happy 2025", CX, 506);
     }
 
     function drawGlobeInside() {
@@ -166,6 +224,17 @@
       triangle(x - w / 2 - 6, y - w * 0.6, x, y - w * 1.1, x + w / 2 + 6, y - w * 0.6);
       fill(250);
       triangle(x - w / 2 - 6, y - w * 0.6, x, y - w * 1.12, x - 4, y - w * 0.95);
+      let cols = [[255, 90, 90], [255, 220, 90], [110, 200, 255], [120, 230, 140]];
+      for (let i = 0; i <= 6; i++) {
+        let t = i / 6;
+        let lx = lerp(x - w / 2 - 4, x + w / 2 + 4, t);
+        let ly = y - w * 0.6 + 3 + sin(t * PI) * 3;
+        let c = cols[(i + floor(frameCount / 20)) % 4];
+        fill(c[0], c[1], c[2], 60);
+        ellipse(lx, ly, 9);
+        fill(c[0], c[1], c[2]);
+        ellipse(lx, ly, 3.5);
+      }
       let glow = 200 + 40 * noise(x, frameCount * 0.05);
       fill(255, glow, 110);
       rect(x - w * 0.3, y - w * 0.42, w * 0.2, w * 0.18);
