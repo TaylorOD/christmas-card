@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Happy Holidays 2026</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.4/p5.min.js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Inter:wght@500&display=swap" rel="stylesheet">
   <link rel="shortcut icon" type="image/png" href="../favicon.png" />
 
   <style>
@@ -20,7 +20,7 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      background: #0b1026;
+      background: #f1e8d6;
     }
 
     canvas {
@@ -29,333 +29,492 @@
       height: auto !important;
       max-height: 100vh;
       object-fit: contain;
+      cursor: pointer;
     }
   </style>
 </head>
 
 <body>
   <script>
-    // 2026: a snowy night at the cabin.
-    // Click anywhere to drop a burst of extra snow.
-
-    let stars = [];
-    let flakes = [];
-    let smoke = [];
-    let pines = [];
-    let startTime;
+    // 2026: "Paper Lanterns", a layered paper-cut winter night.
+    // Move the mouse (or tilt your phone) to look around the scene in depth.
+    // Click anywhere to send a paper lantern up into the sky.
 
     const W = 800;
     const H = 600;
-    const BULB_COLORS = [
-      [255, 70, 70],
-      [70, 200, 90],
-      [255, 210, 60],
-      [80, 150, 255]
-    ];
+    const PAD = 60; // extra paper around each layer so parallax never shows an edge
+
+    // Each paper layer, back to front, and how far it moves with the parallax.
+    let layers = [];
+    const DEPTH = { sky: 3, moon: 6, peaks: 9, village: 16, forest: 26, bank: 40 };
+
+    let stars = [];
+    let backFlakes = [];
+    let frontFlakes = [];
+    let lanterns = [];
+    let prints = [];
+    let fox = { x: -80, step: 0 };
+    let par = { x: 0, y: 0 };
+    let tilt = null;
+    let clicked = false;
 
     function setup() {
       createCanvas(W, H);
-      textFont("Pacifico");
-      startTime = millis();
+      randomSeed(2026);
+      noiseSeed(2026);
 
-      for (let i = 0; i < 140; i++) {
-        stars.push({ x: random(W), y: random(H * 0.6), r: random(1, 2.6), phase: random(TWO_PI) });
+      layers.push({ g: makePeaks(), d: DEPTH.peaks });
+      layers.push({ g: makeVillage(), d: DEPTH.village });
+      layers.push({ g: makeForest(), d: DEPTH.forest });
+      layers.push({ g: makeBank(), d: DEPTH.bank });
+
+      for (let i = 0; i < 120; i++) {
+        stars.push({ x: random(-PAD, W + PAD), y: random(0, 300), r: random(0.8, 2.2), p: random(TWO_PI) });
       }
-      for (let i = 0; i < 220; i++) {
-        flakes.push(makeFlake(random(H)));
-      }
-      // Pine trees on the hills: x, base y, size
-      pines = [
-        { x: 70, y: 470, s: 1.1 }, { x: 130, y: 455, s: 0.8 }, { x: 610, y: 470, s: 1.2 },
-        { x: 680, y: 455, s: 0.9 }, { x: 740, y: 475, s: 1.0 }, { x: 560, y: 480, s: 0.7 }
-      ];
+      for (let i = 0; i < 45; i++) backFlakes.push(makeFlake(random(H), 0.5));
+      for (let i = 0; i < 26; i++) frontFlakes.push(makeFlake(random(H), 1));
+
+      window.addEventListener("deviceorientation", e => {
+        if (e.gamma !== null) tilt = { x: constrain(e.gamma / 30, -1, 1), y: constrain((e.beta - 45) / 30, -1, 1) };
+      });
     }
 
-    function makeFlake(y) {
-      return { x: random(W), y: y, r: random(2, 6), speed: random(0.6, 1.8), drift: random(1000) };
+    // ---------- paper helpers ----------
+
+    function paperLayer(drawFn, shadow) {
+      let g = createGraphics(W + PAD * 2, H + PAD * 2);
+      g.pixelDensity(1);
+      g.noStroke();
+      let ctx = g.drawingContext;
+      ctx.shadowColor = "rgba(20, 15, 40, " + shadow + ")";
+      ctx.shadowBlur = 22;
+      ctx.shadowOffsetY = 8;
+      drawFn(g);
+      ctx.shadowColor = "transparent";
+      // fine paper grain, only where there is paper
+      g.loadPixels();
+      for (let i = 0; i < 5000; i++) {
+        let x = floor(random(g.width));
+        let y = floor(random(g.height));
+        if (g.pixels[(y * g.width + x) * 4 + 3] > 200) {
+          g.fill(random() < 0.5 ? 255 : 0, 10);
+          g.rect(x, y, 1.5, 1.5);
+        }
+      }
+      return g;
     }
+
+    function ridge(g, base, amp, freq, seed, col) {
+      g.fill(col);
+      g.beginShape();
+      g.vertex(0, g.height);
+      for (let x = 0; x <= g.width; x += 6) {
+        let y = base - amp * noise(x * freq, seed) - amp * 0.35 * sin(x * freq * 3 + seed);
+        g.vertex(x, y);
+      }
+      g.vertex(g.width, g.height);
+      g.endShape(CLOSE);
+    }
+
+    function makePeaks() {
+      return paperLayer(g => {
+        // pointed mountains, each with a snow cap cut from lighter paper
+        let peaks = [[60, 285, 150], [230, 245, 190], [430, 270, 170], [650, 235, 210], [850, 280, 160]];
+        for (let [px, py, w] of peaks) {
+          g.fill(116, 132, 170);
+          g.triangle(px - w * 1.15, 480, px, py, px + w * 1.15, 480);
+          g.fill(232, 236, 248);
+          let k = 0.3;
+          let b = 420;
+          g.beginShape();
+          g.vertex(px, py);
+          g.vertex(px + w * k, py + (b - py) * k);
+          g.vertex(px + w * k * 0.45, py + (b - py) * k * 0.8);
+          g.vertex(px, py + (b - py) * k * 1.05);
+          g.vertex(px - w * k * 0.5, py + (b - py) * k * 0.78);
+          g.vertex(px - w * k, py + (b - py) * k);
+          g.endShape(CLOSE);
+        }
+        ridge(g, 440, 50, 0.004, 3, color(96, 112, 156));
+      }, 0.25);
+    }
+
+    function villageY(x) {
+      return 470 - 34 * noise(x * 0.005, 9);
+    }
+
+    function makeVillage() {
+      return paperLayer(g => {
+        g.fill(205, 214, 236);
+        g.beginShape();
+        g.vertex(0, g.height);
+        for (let x = 0; x <= g.width; x += 6) g.vertex(x, villageY(x));
+        g.vertex(g.width, g.height);
+        g.endShape(CLOSE);
+        // little houses with warm windows along the hill
+        let spots = [180, 235, 300, 520, 575, 640, 700];
+        for (let i = 0; i < spots.length; i++) {
+          let x = spots[i];
+          let base = villageY(x) + 6;
+          let w = 30 + (i % 3) * 7;
+          let h = 22 + (i % 2) * 8;
+          g.fill(i % 2 ? 152 : 128, 82, 78);
+          g.rect(x - w / 2, base - h, w, h);
+          g.fill(70, 52, 72);
+          g.triangle(x - w / 2 - 4, base - h, x, base - h - w * 0.55, x + w / 2 + 4, base - h);
+          g.fill(245, 247, 255);
+          g.triangle(x - w / 2 - 4, base - h, x, base - h - w * 0.55, x - 2, base - h - w * 0.3);
+        }
+        // a church with a tall steeple
+        let cx = 410;
+        let cb = villageY(cx) + 6;
+        g.fill(238, 230, 214);
+        g.rect(cx - 22, cb - 40, 44, 40);
+        g.rect(cx - 8, cb - 78, 16, 40);
+        g.fill(70, 52, 72);
+        g.triangle(cx - 26, cb - 40, cx, cb - 62, cx + 26, cb - 40);
+        g.triangle(cx - 11, cb - 78, cx, cb - 104, cx + 11, cb - 78);
+      }, 0.3);
+    }
+
+    function makeForest() {
+      return paperLayer(g => {
+        ridge(g, 545, 26, 0.006, 21, color(222, 230, 246));
+        let col = color(32, 74, 82);
+        g.fill(col);
+        for (let x = -10; x < g.width + 10; x += random(18, 34)) {
+          if (x > 260 + PAD && x < 560 + PAD && random() < 0.75) continue; // a clearing in the middle
+          let base = 535 - 20 * noise(x * 0.006, 21);
+          let h = random(60, 120);
+          let w = h * random(0.35, 0.45);
+          for (let t = 0; t < 4; t++) {
+            let ty = base - (t / 4) * h;
+            let tw = w * (1 - t * 0.2);
+            g.triangle(x - tw / 2, ty, x, ty - h * 0.42, x + tw / 2, ty);
+          }
+        }
+      }, 0.38);
+    }
+
+    function bankY(x) {
+      // x in canvas coordinates
+      return 548 - 22 * sin((x + PAD) * 0.008) - 10 * noise((x + PAD) * 0.01, 33);
+    }
+
+    function makeBank() {
+      return paperLayer(g => {
+        g.fill(250, 251, 255);
+        g.beginShape();
+        g.vertex(0, g.height);
+        for (let x = 0; x <= g.width; x += 5) g.vertex(x, bankY(x - PAD) + PAD);
+        g.vertex(g.width, g.height);
+        g.endShape(CLOSE);
+        // a few snowy branches poking up from the bank
+        g.fill(36, 82, 88);
+        for (let x of [40, 110, 760, 820]) {
+          let b = bankY(x - PAD) + PAD;
+          g.triangle(x - 14, b + 6, x, b - 46, x + 14, b + 6);
+          g.fill(250, 251, 255);
+          g.triangle(x - 6, b - 20, x, b - 46, x + 6, b - 20);
+          g.fill(36, 82, 88);
+        }
+      }, 0.45);
+    }
+
+    // ---------- drawing ----------
 
     function draw() {
+      updateParallax();
       drawSky();
       drawStars();
-      drawMoon(700, 250);
-      drawAurora();
-      drawHills();
-      for (let p of pines) drawPine(p.x, p.y, p.s);
-      drawCabin(300, 380);
-      drawSnowman(235, 535);
-      drawSmoke();
-      drawSnow();
-      drawGarland();
-      drawMessage();
+      drawMoon();
+      drawLayer(layers[0]);
+      drawFlakes(backFlakes, DEPTH.peaks);
+      drawLayer(layers[1]);
+      drawLanterns(true);
+      drawLayer(layers[2]);
+      drawLayer(layers[3]);
+      drawFox();
+      drawFlakes(frontFlakes, DEPTH.bank + 10);
+      drawLanterns(false);
+      drawTitle();
+      drawFrame();
+      drawHint();
+    }
+
+    function updateParallax() {
+      let tx, ty;
+      if (tilt) {
+        tx = tilt.x;
+        ty = tilt.y;
+      } else if (mouseX > 0 && mouseX < W && mouseY > 0 && mouseY < H) {
+        tx = (mouseX / W - 0.5) * 2;
+        ty = (mouseY / H - 0.5) * 2;
+      } else {
+        tx = sin(frameCount * 0.006) * 0.5;
+        ty = cos(frameCount * 0.004) * 0.25;
+      }
+      par.x = lerp(par.x, tx, 0.05);
+      par.y = lerp(par.y, ty, 0.05);
+    }
+
+    function off(d) {
+      return { x: -par.x * d, y: -par.y * d * 0.5 };
+    }
+
+    function drawLayer(L) {
+      let o = off(L.d);
+      image(L.g, -PAD + o.x, -PAD + o.y);
     }
 
     function drawSky() {
       let ctx = drawingContext;
       let g = ctx.createLinearGradient(0, 0, 0, H);
-      g.addColorStop(0, "#0b1026");
-      g.addColorStop(0.6, "#2b3a74");
-      g.addColorStop(1, "#5a6fb0");
+      g.addColorStop(0, "#14183a");
+      g.addColorStop(0.45, "#3a3a72");
+      g.addColorStop(0.8, "#a9709a");
+      g.addColorStop(1, "#f0b38e");
       ctx.fillStyle = g;
       ctx.fillRect(0, 0, W, H);
     }
 
     function drawStars() {
+      let o = off(DEPTH.sky);
       noStroke();
       for (let s of stars) {
-        let a = 150 + 105 * sin(frameCount * 0.05 + s.phase);
-        fill(255, 255, 230, a);
-        ellipse(s.x, s.y, s.r, s.r);
+        let a = 140 + 115 * sin(frameCount * 0.04 + s.p);
+        fill(255, 248, 225, a);
+        ellipse(s.x + o.x, s.y + o.y, s.r);
       }
     }
 
-    function drawMoon(x, y) {
+    function drawMoon() {
+      let o = off(DEPTH.moon);
+      let x = 640 + o.x;
+      let y = 130 + o.y;
+      let ctx = drawingContext;
+      let g = ctx.createRadialGradient(x, y, 30, x, y, 150);
+      g.addColorStop(0, "rgba(255, 236, 200, 0.35)");
+      g.addColorStop(1, "rgba(255, 236, 200, 0)");
+      ctx.fillStyle = g;
+      ctx.fillRect(x - 150, y - 150, 300, 300);
+      ctx.save();
+      ctx.shadowColor = "rgba(0,0,0,0.25)";
+      ctx.shadowBlur = 14;
+      ctx.shadowOffsetY = 5;
       noStroke();
-      for (let i = 4; i > 0; i--) {
-        fill(255, 250, 220, 18);
-        ellipse(x, y, 70 + i * 22);
-      }
-      fill(255, 250, 225);
-      ellipse(x, y, 70);
-      fill(230, 225, 200);
-      ellipse(x - 12, y - 8, 12);
-      ellipse(x + 14, y + 10, 9);
-      ellipse(x + 6, y - 16, 6);
+      fill(253, 244, 222);
+      ellipse(x, y, 74);
+      ctx.restore();
+      fill(240, 226, 196);
+      ellipse(x - 14, y - 6, 14);
+      ellipse(x + 12, y + 14, 10);
+      ellipse(x + 16, y - 16, 7);
     }
 
-    function drawAurora() {
+    function makeFlake(y, scale) {
+      return {
+        x: random(-20, W + 20),
+        y: y,
+        r: random(3, 7) * scale + 2,
+        v: random(0.25, 0.7) * (0.6 + scale),
+        rot: random(TWO_PI),
+        spin: random(-0.02, 0.02),
+        drift: random(1000)
+      };
+    }
+
+    function drawFlakes(arr, depth) {
+      let o = off(depth);
+      stroke(255, 255, 255, 230);
       noFill();
-      for (let band = 0; band < 3; band++) {
-        stroke(120, 255, 190, 28 - band * 6);
-        strokeWeight(26 - band * 6);
-        beginShape();
-        for (let x = -20; x <= W + 20; x += 20) {
-          let y = 150 + band * 22 + 40 * noise(x * 0.004, band, frameCount * 0.004) - 20;
-          curveVertex(x, y);
+      for (let f of arr) {
+        f.y += f.v;
+        f.x += sin(frameCount * 0.015 + f.drift) * 0.35;
+        f.rot += f.spin;
+        if (f.y > H + 12) Object.assign(f, makeFlake(-12, f.r > 6 ? 1 : 0.5));
+        push();
+        translate(f.x + o.x, f.y + o.y);
+        rotate(f.rot);
+        strokeWeight(f.r > 6 ? 1.6 : 1.1);
+        for (let k = 0; k < 6; k++) {
+          line(0, 0, f.r, 0);
+          line(f.r * 0.55, 0, f.r * 0.8, f.r * 0.2);
+          line(f.r * 0.55, 0, f.r * 0.8, -f.r * 0.2);
+          rotate(PI / 3);
         }
-        endShape();
+        pop();
       }
       noStroke();
     }
 
-    function drawHills() {
+    function drawFox() {
+      let o = off(DEPTH.bank);
+      fox.x += 0.7;
+      fox.step += 0.18;
+      if (fox.x > W + 90) { fox.x = -90; prints = []; }
+      let gy = bankY(fox.x) + 2;
+
+      // paw prints left in the snow
+      if (frameCount % 14 === 0) prints.push({ x: fox.x - 8, y: bankY(fox.x - 8) + 6, a: 120 });
       noStroke();
-      fill(215, 228, 245);
+      for (let p of prints) {
+        p.a -= 0.25;
+        fill(150, 165, 200, max(0, p.a));
+        ellipse(p.x + o.x, p.y + o.y, 5, 3);
+      }
+
+      push();
+      translate(fox.x + o.x, gy + o.y);
+      let bob = abs(sin(fox.step)) * 2;
+      drawingContext.shadowColor = "rgba(20,15,40,0.35)";
+      drawingContext.shadowBlur = 10;
+      drawingContext.shadowOffsetY = 4;
+      // legs
+      fill(60, 34, 28);
+      let s = sin(fox.step) * 5;
+      rect(-14 + s, -12, 4, 12, 2);
+      rect(-8 - s, -12, 4, 12, 2);
+      rect(10 - s, -12, 4, 12, 2);
+      rect(16 + s, -12, 4, 12, 2);
+      // tail with a white tip
+      fill(214, 96, 40);
       beginShape();
-      vertex(0, H);
-      for (let x = 0; x <= W; x += 10) vertex(x, 450 + 25 * sin(x * 0.008 + 1));
-      vertex(W, H);
+      vertex(-18, -22 - bob);
+      bezierVertex(-36, -30, -52, -18, -50, -6);
+      bezierVertex(-40, -12, -30, -14, -16, -14 - bob);
       endShape(CLOSE);
-
-      fill(245, 250, 255);
-      beginShape();
-      vertex(0, H);
-      for (let x = 0; x <= W; x += 10) vertex(x, 495 + 18 * sin(x * 0.012));
-      vertex(W, H);
-      endShape(CLOSE);
-    }
-
-    function drawPine(x, y, s) {
-      noStroke();
-      fill(90, 55, 30);
-      rect(x - 5 * s, y - 10 * s, 10 * s, 18 * s);
-      fill(20, 90, 60);
-      for (let i = 0; i < 3; i++) {
-        let w = (60 - i * 14) * s;
-        let top = y - (40 + i * 28) * s;
-        triangle(x, top - 20 * s, x - w / 2, top + 30 * s, x + w / 2, top + 30 * s);
-      }
-      // snow caps
-      fill(245, 250, 255);
-      triangle(x, y - 116 * s, x - 9 * s, y - 100 * s, x + 9 * s, y - 100 * s);
-    }
-
-    function drawCabin(x, y) {
-      // chimney
-      noStroke();
-      fill(120, 60, 45);
-      rect(x + 120, y - 95, 22, 50);
-
-      // walls
-      fill(140, 82, 45);
-      rect(x, y, 200, 110);
-      stroke(105, 60, 30);
-      strokeWeight(2);
-      for (let ly = y + 14; ly < y + 110; ly += 14) line(x, ly, x + 200, ly);
-      noStroke();
-
-      // roof with snow
-      fill(95, 45, 35);
-      triangle(x - 20, y + 4, x + 100, y - 80, x + 220, y + 4);
-      fill(250, 252, 255);
-      beginShape();
-      vertex(x - 24, y + 6);
-      vertex(x + 100, y - 86);
-      vertex(x + 224, y + 6);
-      vertex(x + 210, y + 12);
-      vertex(x + 100, y - 68);
-      vertex(x - 10, y + 12);
-      endShape(CLOSE);
-      rect(x + 117, y - 101, 28, 9, 4); // snow on chimney
-
-      // glowing windows
-      let flicker = 210 + 30 * noise(frameCount * 0.05);
-      drawWindow(x + 25, y + 30, flicker);
-      drawWindow(x + 135, y + 30, flicker);
-
-      // door + wreath
-      fill(85, 45, 25);
-      rect(x + 82, y + 48, 36, 62, 4, 4, 0, 0);
-      noFill();
-      stroke(30, 120, 60);
-      strokeWeight(6);
-      ellipse(x + 100, y + 66, 20);
-      noStroke();
-      fill(220, 40, 40);
-      ellipse(x + 100, y + 76, 7);
-      fill(255, 215, 0);
-      ellipse(x + 110, y + 82, 5);
-    }
-
-    function drawWindow(x, y, glow) {
-      noStroke();
-      fill(255, 200, 90, 40);
-      ellipse(x + 20, y + 18, 80);
-      fill(255, glow, 110);
-      rect(x, y, 40, 36);
-      stroke(85, 45, 25);
-      strokeWeight(3);
-      line(x + 20, y, x + 20, y + 36);
-      line(x, y + 18, x + 40, y + 18);
-      noFill();
-      rect(x, y, 40, 36);
-      noStroke();
-    }
-
-    function drawSmoke() {
-      if (frameCount % 8 === 0) {
-        smoke.push({ x: 431, y: 280, r: 10, a: 140, seed: random(100) });
-      }
-      noStroke();
-      for (let i = smoke.length - 1; i >= 0; i--) {
-        let p = smoke[i];
-        p.y -= 0.7;
-        p.x += 0.3 + (noise(p.seed, frameCount * 0.01) - 0.5);
-        p.r += 0.25;
-        p.a -= 0.9;
-        fill(220, 225, 235, p.a);
-        ellipse(p.x, p.y, p.r);
-        if (p.a <= 0) smoke.splice(i, 1);
-      }
-    }
-
-    function drawSnowman(x, y) {
-      stroke(170, 185, 210);
-      strokeWeight(1.5);
-      fill(255);
-      ellipse(x, y, 60);
-      ellipse(x, y - 45, 44);
-      ellipse(x, y - 80, 32);
-      noStroke();
-
-      // scarf
-      fill(200, 30, 40);
-      rect(x - 18, y - 68, 36, 7, 3);
-      rect(x + 6, y - 66, 7, 22, 3);
-
-      // hat
+      fill(250, 246, 240);
+      ellipse(-48, -9, 10, 8);
+      // body
+      fill(222, 104, 44);
+      ellipse(0, -20 - bob, 46, 20);
+      fill(250, 240, 228);
+      ellipse(6, -14 - bob, 22, 8);
+      // head
+      fill(226, 110, 46);
+      triangle(18, -30 - bob, 40, -24 - bob, 20, -16 - bob);
+      triangle(18, -30 - bob, 22, -42 - bob, 28, -28 - bob);
+      fill(60, 34, 28);
+      ellipse(40, -24 - bob, 4);
+      drawingContext.shadowColor = "transparent";
       fill(30);
-      rect(x - 18, y - 98, 36, 5);
-      rect(x - 11, y - 120, 22, 22);
-      fill(60, 160, 90);
-      rect(x - 11, y - 104, 22, 4);
-
-      // face
-      fill(20);
-      ellipse(x - 6, y - 84, 4);
-      ellipse(x + 6, y - 84, 4);
-      fill(255, 140, 0);
-      triangle(x, y - 80, x, y - 76, x + 14, y - 77);
-
-      // arms (one waving)
-      stroke(110, 70, 35);
-      strokeWeight(3);
-      line(x - 20, y - 48, x - 48, y - 62);
-      let wave = sin(frameCount * 0.08) * 10;
-      line(x + 20, y - 48, x + 44, y - 72 + wave);
-      noStroke();
+      ellipse(29, -26 - bob, 2.5);
+      pop();
     }
 
-    function drawSnow() {
-      noStroke();
-      fill(255, 255, 255, 220);
-      for (let i = flakes.length - 1; i >= 0; i--) {
-        let f = flakes[i];
-        f.y += f.speed;
-        f.x += sin(frameCount * 0.02 + f.drift) * 0.5;
-        ellipse(f.x, f.y, f.r);
-        if (f.y > H + 10) {
-          if (flakes.length > 220) flakes.splice(i, 1);
-          else Object.assign(f, makeFlake(-10));
-        }
-      }
-    }
-
-    function drawGarland() {
-      // A string of lights swagging across the top of the card
-      stroke(30, 60, 40);
-      strokeWeight(2);
-      noFill();
-      let swags = 4;
-      let sw = W / swags;
-      for (let s = 0; s < swags; s++) {
+    function drawLanterns(behind) {
+      // lanterns start in front of the forest and pass behind it as they rise far away
+      for (let i = lanterns.length - 1; i >= 0; i--) {
+        let L = lanterns[i];
+        let far = L.age > 140;
+        if (behind !== far) continue; // each lantern is drawn in exactly one pass per frame
+        L.age++;
+        L.y -= L.v;
+        L.v *= 0.999;
+        L.x += sin(L.age * 0.02 + L.seed) * 0.35;
+        L.s = max(0.25, L.s * 0.9975);
+        if (L.y < -40) { lanterns.splice(i, 1); continue; }
+        let flick = 0.85 + 0.15 * noise(L.seed, frameCount * 0.1);
+        let ctx = drawingContext;
+        let r = 46 * L.s;
+        let g = ctx.createRadialGradient(L.x, L.y, 2, L.x, L.y, r);
+        g.addColorStop(0, "rgba(255, 190, 90, " + (0.55 * flick) + ")");
+        g.addColorStop(1, "rgba(255, 150, 60, 0)");
+        ctx.fillStyle = g;
+        ctx.fillRect(L.x - r, L.y - r, r * 2, r * 2);
+        noStroke();
+        push();
+        translate(L.x, L.y);
+        scale(L.s);
+        fill(255, 170 + 40 * flick, 90);
         beginShape();
-        for (let t = 0; t <= 1.001; t += 0.05) {
-          vertex(s * sw + t * sw, 8 + 30 * sin(PI * t));
-        }
-        endShape();
-      }
-      noStroke();
-      let n = 0;
-      for (let s = 0; s < swags; s++) {
-        for (let t = 0.1; t < 1; t += 0.2) {
-          let bx = s * sw + t * sw;
-          let by = 8 + 30 * sin(PI * t) + 8;
-          let c = BULB_COLORS[n % BULB_COLORS.length];
-          let on = (floor(frameCount / 30) + n) % 3 !== 0;
-          fill(c[0], c[1], c[2], on ? 70 : 0);
-          ellipse(bx, by, 22);
-          fill(on ? color(c[0], c[1], c[2]) : color(c[0] * 0.4, c[1] * 0.4, c[2] * 0.4));
-          ellipse(bx, by, 9, 13);
-          n++;
-        }
+        vertex(-10, -14);
+        vertex(10, -14);
+        vertex(13, 12);
+        vertex(-13, 12);
+        endShape(CLOSE);
+        fill(255, 236, 170, 220 * flick);
+        ellipse(0, 6, 9, 10);
+        fill(150, 70, 40);
+        rect(-11, -16, 22, 3, 1);
+        pop();
       }
     }
 
-    function drawMessage() {
-      let t = (millis() - startTime) / 1000;
-      let a = constrain(map(t, 0.5, 2.5, 0, 255), 0, 255);
-      let bob = sin(frameCount * 0.04) * 3;
-
+    function drawTitle() {
+      let ctx = drawingContext;
       textAlign(CENTER, CENTER);
       noStroke();
-      textSize(40);
-      fill(0, 0, 0, a * 0.4);
-      text("Happy Holidays from Taylor Dorsett!", W / 2 + 2, 92 + bob + 2);
-      fill(255, 245, 220, a);
-      text("Happy Holidays from Taylor Dorsett!", W / 2, 92 + bob);
+      ctx.save();
+      ctx.shadowColor = "rgba(10, 8, 30, 0.5)";
+      ctx.shadowBlur = 12;
+      ctx.shadowOffsetY = 4;
+      textFont("Pacifico");
+      textSize(50);
+      fill(255, 246, 228);
+      text("Happy Holidays", W / 2, 92);
+      ctx.restore();
+      textFont("Inter");
+      textSize(15);
+      fill(255, 236, 210, 220);
+      drawingContext.letterSpacing = "3px";
+      text("FROM TAYLOR DORSETT  ·  2026", W / 2, 140);
+      drawingContext.letterSpacing = "0px";
+    }
 
-      textSize(26);
-      fill(255, 215, 90, a);
-      text("Cheers to 2026 & a bright 2027", W / 2, 140 + bob);
+    function drawFrame() {
+      // a cream paper mat with a scalloped window, casting a shadow onto the scene
+      let ctx = drawingContext;
+      ctx.save();
+      ctx.shadowColor = "rgba(20, 15, 40, 0.55)";
+      ctx.shadowBlur = 18;
+      ctx.shadowOffsetY = 4;
+      ctx.beginPath();
+      ctx.rect(-10, -10, W + 20, H + 20);
+      let inset = 20;
+      let bump = 10;
+      let x0 = inset, y0 = inset, x1 = W - inset, y1 = H - inset;
+      ctx.moveTo(x0, y0);
+      let n = 20;
+      for (let i = 0; i < n; i++) {
+        let ax = lerp(x0, x1, i / n), bx = lerp(x0, x1, (i + 1) / n);
+        ctx.quadraticCurveTo((ax + bx) / 2, y0 + bump, bx, y0);
+      }
+      let m = 15;
+      for (let i = 0; i < m; i++) {
+        let ay = lerp(y0, y1, i / m), by = lerp(y0, y1, (i + 1) / m);
+        ctx.quadraticCurveTo(x1 - bump, (ay + by) / 2, x1, by);
+      }
+      for (let i = 0; i < n; i++) {
+        let ax = lerp(x1, x0, i / n), bx = lerp(x1, x0, (i + 1) / n);
+        ctx.quadraticCurveTo((ax + bx) / 2, y1 - bump, bx, y1);
+      }
+      for (let i = 0; i < m; i++) {
+        let ay = lerp(y1, y0, i / m), by = lerp(y1, y0, (i + 1) / m);
+        ctx.quadraticCurveTo(x0 + bump, (ay + by) / 2, x0, by);
+      }
+      ctx.closePath();
+      ctx.fillStyle = "#f1e8d6";
+      ctx.fill("evenodd");
+      ctx.restore();
+    }
+
+    function drawHint() {
+      if (clicked && lanterns.length > 0) return;
+      let a = 150 + 90 * sin(frameCount * 0.05);
+      textFont("Inter");
+      textSize(13);
+      textAlign(CENTER, CENTER);
+      fill(70, 60, 90, a);
+      text(clicked ? "click to send up another lantern" : "click to send up a lantern", W / 2, H - 9);
     }
 
     function mousePressed() {
-      for (let i = 0; i < 60; i++) {
-        let f = makeFlake(mouseY + random(-30, 30));
-        f.x = mouseX + random(-40, 40);
-        flakes.push(f);
-      }
+      if (mouseX < 0 || mouseX > W || mouseY < 0 || mouseY > H) return;
+      clicked = true;
+      let y = constrain(mouseY, 160, H - 40);
+      lanterns.push({ x: mouseX, y: y, v: random(0.7, 1.0), s: 1, age: 0, seed: random(1000) });
     }
   </script>
 </body>
